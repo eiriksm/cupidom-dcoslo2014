@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+    <meta charset="utf-8">
+    <meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/css/reveal.min.css">
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/css/theme/default.css">
+      <title>
+        Case study - cupido mobil.
+      </title>
+      <style>
+    .reveal * {
+      color: #fff !important;
+      text-shadow: 0px 0px 10px #000 !important;
+    }
+    #nm-logo {
+      border: 0;
+      background: none;
+      box-shadow: 0 0 0 0;
+    }
+  </style>
+
+ </head>
+ <body>
+  <div class="reveal">
+    <div class="slides">
+      <section>
+        <h1>Case study - Cupido mobil</h1>
+        <h2>Eirik Morland, Ny Media</h2>
+        <img id="nm-logo" src="nm_logo_ns.png">
+      </section>
+      <section>
+        <h1>Cupido.no - web-versjon</h1>
+        <ul>
+          <li>Drupal 6 (pressflow)</li>
+          <li>Varnish</li>
+          <li>Memcache</li>
+          <li>4 frontservere</li>
+        </ul>
+      </section>
+      <section>
+        <h1>Cupido.no - andre tall</h1>
+        <ul>
+          <li>16 000 sessions per dag</li>
+          <li>415 000 sidevisninger</li>
+          <li>17 min / 25 sider per session</li>
+          <li>På det meste 1 melding hvert andre sek.</li>
+        </ul>
+      </section>
+      <section>
+        <section>
+          <h1>Case - mobilversjon</h1>
+          <h2>Alternativ</h2>
+          <ul>
+            <li>App</li>
+            <li>Responsiv design</li>
+            <li>Mobil versjon</li>
+          </ul>
+        </section>
+        <section data-background="http://img.pandawhale.com/post-31176-thats-a-penis-gif-thatsapenisg-c5V8.gif">
+          <h1>App</h1>
+          <p>Ikke aktuelt pga restriksjoner på innhold.</p>
+        </section>
+        <section data-background="http://gifsec.com/wp-content/uploads/GIF/2014/03/There-i-fixed-it-GIF.gif">
+          <h1>Responsiv design</h1>
+          <ul>
+            <li>Mulig gjenbruk av nåværende theme</li>
+            <li>Veldig mange elementer på mange sider som er for meget for en mobil</li>
+            <li>Man må bootstrappe Drupal med alle modulene</li>
+            <li>Mest fordelaktig om man går "all-in".</li>
+            <li>Redesign av web-versjonen var ikke i planene.</li>
+          </ul>
+        </section>
+        <section data-background="http://media.giphy.com/media/S46TbKyEDHipi/giphy.gif">
+          <h1>Mobilversion</h1>
+          <ul>
+            <li>Ingen page loads, kun dynamisk lasting av innhold med AJAX</li>
+            <li>Mulig å "erstatte" kun deler av nettsiden.</li>
+            <li>Ingen responsive hacks og display:none</li>
+          </ul>
+        </section>
+      </section>
+      <section data-background="http://media.giphy.com/media/EzGslrzAb5AxG/giphy.gif">
+        <h1>Mobilversjon - teknologi</h1>
+        <ul>
+          <li>Varnish - device detection</li>
+          <li>Backend server, skrevet i go (gorilla)</li>
+          <li>Frontend i angular.js</li>
+        </ul>
+      </section>
+      <section>
+        <h1>Login</h1>
+        <pre>Login request:
+
++----------------+          +---------------+            +---------------+
+|  App / client  |          |  App backend  |            |  Drupal (API) |
++-------+--------+          +-------+-------+            +-------+-------+
+     |                           |                            |
+     | 1. Page request           |                            |
+     |+------------------------->| 2. No valid app session[1] |
+     |                           |    Send login request      |
+     |                           |+-------------------------->|
+     |                           |                            |
+     |                           | 3. Return Drupal session   |
+     | 4. Create app session     |<--------------------------+|
+     |    Store Drupal session   |                            |
+     |    Return resources       |                            |
+     |    (html, js, img..)      |                            |
+     |<-------------------------+|                            |
+     v                           v                            v</pre>
+      </section>
+      <section>
+        <h1>"Vanlige" API requests</h1>
+        <pre>API request to Drupal:
+
++----------------+          +---------------+            +---------------+
+|  App / client  |          |  App backend  |            |  Drupal (API) |
++-------+--------+          +-------+-------+            +-------+-------+
+     |                           |                            |
+     | 1. Drupal API request     |                            |
+     |+------------------------->| 2. Check app session       |
+     |                           |    Proxy /api prefix       |
+     |                           |+-------------------------->|
+     |                           |                            |
+     |                           | 3. Return json result      |
+     |<------------------------------------------------------+|
+     v                           v                            v</pre>
+      </section>
+      <section>
+        <h1>Søk</h1>
+        <pre>API request to App backend and SOLR:
+
++----------------+          +---------------+            +---------------+
+|  App / client  |          |  App backend  |            |  Solr         |
++-------+--------+          +-------+-------+            +-------+-------+
+     |                           |                            |
+     | 1. Search request         |                            |
+     |+------------------------->| 2. Check app session       |
+     |                           |    Solr query              |
+     |                           |+-------------------------->|
+     |                           |                            |
+     |                           | 3. Return result           |
+     |                           |<--------------------------+|
+     | 4. Return result          |                            |
+     |<-------------------------+|                            |
+     v                           v                            v</pre>
+      </section>
+      <section>
+        <h1>Meldinger</h1>
+        <pre>API request on messages:
+
++----------------+          +---------------+            +---------------+
+|  App / client  |          |  App / redis  |            |  Drupal       |
++-------+--------+          +-------+-------+            +-------+-------+
+     |                           |                            |
+     | 1. Updates?               |                            |
+     |+------------------------->| 2. Check app session       |
+     |                           |    Subscribe on key        |
+     |                           |+ - - - - - - - - - - - - ->|
+     |                           |                            |
+     |                           | 3. Return result           |
+     | 4. Return result          |<- - - - - - - - - - - - - +|
+     | or HTTP 204 No content    |                            |
+     |<-------------------------+|                            |
+     v                           v                            v</pre>
+      </section>
+      <section>
+        <section data-background="http://media.giphy.com/media/5MDk34NOY6ili/giphy.gif">
+          <h1>Demos?</h1>
+        </section>
+        <section>
+          <h1>SOLR sortere på distanse</h1>
+        </section>
+        <section>
+          <img src="cupidomsearch.gif">
+        </section>
+        <section>
+          <img src="cupidomsearch2.gif">
+        </section>
+        <section>
+          <iframe width="560" height="315" src="http://www.youtube.com/embed/Ziv3c4y_duA?rel=0&t=17" frameborder="0" allowfullscreen></iframe>
+        </section>
+        <section>
+          <h1>SOLR generelt</h1>
+        </section>
+        <section>
+          <img src="cupidomsearch3.gif">
+        </section>
+        <section>
+          <h1>Meldinger</h1>
+        </section>
+        <section>
+          <img src="cupidomsearch4.gif">
+        </section>
+      </section>
+      <section>
+        <h1>Hvorfor ikke bare Drupal som backend?</h1>
+        <ul>
+          <li>Mye overhead med bootstrap av Drupal for søk.</li>
+          <li>Mye overhead med bootstrap av Drupal for bilder.</li>
+          <li>Eget caching lag for realtime meldinger (redis)</li>
+        </ul>
+      </section>
+      <section>
+        <h1>Utfordringer?</h1>
+        <ul>
+          <li>Mye eksisterende logikk i moduler uten ordentlig API-funksjoner</li>
+          <li>Løsning: wrapper api modul</li>
+          <li>Egen bruker-sesssions / tilgangskontroll</li>
+        </ul>
+      </section>
+      <section>
+        <h1>Andre positive effekter?</h1>
+        <p>Potensielt enklere å forholde seg til oppgraderinger (f.eks 6 - 7) ved å ha en “kontrakt” ift til API for backend.</p>
+      </section>
+      <section data-background="http://media.giphy.com/media/yLWuzyLdZGUHm/giphy.gif">
+        <h1>Spørsmål?</h1>
+      </section>
+    </div>
+  </div>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/lib/js/head.min.js"></script>
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/js/reveal.min.js"></script>
+
+		<script>
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true
+			});
+		</script>
+
+ </body>
+</html>
